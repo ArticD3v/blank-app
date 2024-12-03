@@ -8,5 +8,5 @@ pydub==0.25.1
 torch
 torchvision
 git+https://github.com/hwchase17/langchain.git
-langchain-groq==0.1.2
+langchain-groq
 python-dotenv==1.0.0
