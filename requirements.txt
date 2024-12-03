@@ -4,6 +4,7 @@ moviepy
 transformers
 git+https://github.com/openai/whisper.git
 ffmpeg-python
+ffprobe-python
 ffmpeg
 pydub==0.25.1
 torch
