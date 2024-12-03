@@ -1,1 +1,12 @@
 streamlit
+opencv-python
+moviepy
+transformers
+git+https://github.com/openai/whisper.git
+ffmpeg-python
+pydub
+torch
+torchvision
+langchain
+langchain-groq
+flask
