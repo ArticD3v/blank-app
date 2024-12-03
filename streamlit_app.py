@@ -1,14 +1,15 @@
 import streamlit as st
 import cv2
 import whisper
-import ffmpeg
-from pydub import AudioSegment
 import os
+from pydub import AudioSegment
+from pydub.utils import which
 from langchain_groq import ChatGroq
 from dotenv import load_dotenv
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
+# Load environment variables
 load_dotenv()
 
 groq_api_key = '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'
@@ -38,20 +39,29 @@ def get_video_metadata(video_path):
     cap.release()
     return frame_rate, frame_count, duration, width, height
 
-
-
 def extract_audio_from_video(video_path, output_audio_path="audio.wav"):
     """
     Extracts audio from a video file and saves it as a WAV file using pydub.
     """
-    # Load the video as an AudioSegment
-    audio = AudioSegment.from_file(video_path)
+    # Check if ffmpeg is available
+    ffmpeg_path = which("ffmpeg")
+    if not ffmpeg_path:
+        st.error("Error: ffmpeg is not installed or not found in the path.")
+        return None
     
-    # Export the audio to a WAV file
-    audio.export(output_audio_path, format="wav")
-    
-    return output_audio_path
+    # Set ffmpeg path explicitly for pydub
+    AudioSegment.converter = ffmpeg_path
 
+    try:
+        # Load the video as an AudioSegment
+        audio = AudioSegment.from_file(video_path)
+        
+        # Export the audio to a WAV file
+        audio.export(output_audio_path, format="wav")
+        return output_audio_path
+    except Exception as e:
+        st.error(f"Error extracting audio: {e}")
+        return None
 
 def split_audio(audio_path, chunk_length=300):
     """
@@ -77,8 +87,6 @@ def transcribe_audio_chunks(chunk_files, model):
         transcripts.append(result["text"])
     return " ".join(transcripts)
 
-
-
 def generate_title_and_description(transcript):
     # Define the prompt template for title generation
     title_prompt_template = PromptTemplate(
@@ -89,7 +97,7 @@ def generate_title_and_description(transcript):
     # Define the prompt template for description generation
     description_prompt_template = PromptTemplate(
         input_variables=["content"],
-        template="Provide a detailed summary of  based on the following passage: {content}"
+        template="Provide a detailed summary of based on the following passage: {content}"
     )
 
     # Create LLMChain objects using the model and the prompt templates
@@ -103,9 +111,6 @@ def generate_title_and_description(transcript):
     description_result = description_chain.run({"content": transcript})
 
     return title_result, description_result
-
-
-
 
 def main():
     st.title("Video Metadata and Title/Description Generator (DataScience AI/ML)")
@@ -136,23 +141,20 @@ def main():
                 st.write(f"Resolution: {width}x{height}")
 
             # Step 3: Extract audio from video
-            # st.write("Extracting audio from video...")
             audio_path = extract_audio_from_video(temp_video_path)
+            if not audio_path:
+                return
 
             # Step 4: Split audio into smaller chunks (optional, for long videos)
-            # st.write("Splitting audio into chunks...")
             chunk_files = split_audio(audio_path, chunk_length=300)  # 5-minute chunks
 
             # Step 5: Load Whisper model
-            print("Loading Whisper model...")
             model = whisper.load_model("tiny")  # Use CPU
 
             # Step 6: Transcribe each chunk and combine
-            print("Transcribing audio...")
             transcript = transcribe_audio_chunks(chunk_files, model)
 
             # Step 7: Generate title and description
-            print("Generating title and description...")
             title, description = generate_title_and_description(transcript)
 
             # Step 8: Output the results
