@@ -11,7 +11,7 @@ from langchain.chains import LLMChain
 
 load_dotenv()
 
-groq_api_key = os.getenv('groq_api_key')
+groq_api_key = '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'
 
 # Initialize the LLM with the API key and model
 llm = ChatGroq(groq_api_key=groq_api_key, model='Llama-3.1-70b-Versatile')
