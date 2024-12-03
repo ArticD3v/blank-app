@@ -10,3 +10,4 @@ torchvision
 langchain
 langchain-groq
 flask
+opencv-python-headless
